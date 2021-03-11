@@ -1,6 +1,6 @@
 # Context
 
-**[이 챕터의 모든 코드들을 이 곳에서 볼 수 있다.](https://github.com/quii/learn-go-with-tests/tree/main/context)**
+**[이 챕터의 모든 코드를 이 곳에서 볼 수 있다.](https://github.com/quii/learn-go-with-tests/tree/main/context)**
 
 소프트웨어(software)는 종종 오래 가동하고(long-running) 리소스를 많이 점유하는(resource-intensive) 프로세스(혹은 고루틴)를 시작한다. 만약 프로세스를 시작한 action이 어떠한 이유로 인하여 취소되거나 오류를 일으킬 경우(fails), 프로그램에서(your application) 실행된 프로세스들을 일관된 방법으로 멈춰줘야한다.
 
@@ -60,9 +60,9 @@ func TestServer(t *testing.T) {
 
 Happy path한 코드를 준비했으니 이제는 약간 더 현실성이 있는 경우를 상정해 볼 차례이다. 그 말인즉슨 유저가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못할 경우이다.
 
-## Write the test first
+## 먼저 테스트를 작성하자
 
-Our handler will need a way of telling the `Store` to cancel the work so update the interface.
+우리의 핸들러(http.HandlerFunc)에서 `Store`를 중단시킬 방법이 필요하므로 인터페이스를 그에 맞게 바꿔주자.
 
 ```go
 type Store interface {
@@ -71,7 +71,7 @@ type Store interface {
 }
 ```
 
-We will need to adjust our spy so it takes some time to return `data` and a way of knowing it has been told to cancel. We'll also rename it to `SpyStore` as we are now observing the way it is called. It'll have to add `Cancel` as a method to implement the `Store` interface.
+우리는 우리의 spy를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 하자. 또한 우리는 해당 구조체(it)가 어떻게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꾸자. 그리고 `Store` 인터페이스와 상응하도록 `Cancel` 메소드를 추가해주자.
 
 ```go
 type SpyStore struct {
@@ -89,7 +89,7 @@ func (s *SpyStore) Cancel() {
 }
 ```
 
-Let's add a new test where we cancel the request before 100 milliseconds and check the store to see if it gets cancelled.
+100 밀리초가 지나기 전에 요청을 취소하는 테스트를 추가해보고, store가 취소되는지 확인해보자.
 
 ```go
 t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
@@ -113,17 +113,17 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
   })
 ```
 
-From the [Go Blog: Context](https://blog.golang.org/context)
+[Go Blog: Context](https://blog.golang.org/context)에 따르면
 
-> The context package provides functions to derive new Context values from existing ones. These values form a tree: when a Context is canceled, all Contexts derived from it are also canceled.
+> Context 패키지는 존재하는 Context들로 부터 새 Context의 값들을 파생시키는(derive) 함수를 제공하고, 이 때 이 값들은 트리를 형성한다: 어떤 Context가 취소될 경우, 그것으로 부터 파생된 모든 Context들이 취소된다.
 
-It's important that you derive your contexts so that cancellations are propagated throughout the call stack for a given request.
+이 점을 주의하여, 요청이 주어질 경우, 해당 요청의 호출 스택을 따라 모든 Context가 취소될 수 있도록 Context들을 파생시키는 것이 중요하다.
 
-What we do is derive a new `cancellingCtx` from our `request` which returns us a `cancel` function. We then schedule that function to be called in 5 milliseconds by using `time.AfterFunc`. Finally we use this new context in our request by calling `request.WithContext`.
+우리는 `request` 에서 새로운 `cancellingCtx`를 파생시킴과 동시에 `cancel` 함수를 얻게 된다. 그리고나서 `time.AfterFunc`를 통해 해당 함수가 5 밀리초 후에 호출되도록 설정한다. 마지막으로 우리는 `request.WithContext`를 통하여 이 새 Context를 사용할 것이다.
 
-## Try to run the test
+## 테스트를 돌려보자
 
-The test fails as we'd expect.
+우리가 예상하는 데로 테스트는 실패할 것이다.
 
 ```go
 --- FAIL: TestServer (0.00s)
@@ -131,7 +131,7 @@ The test fails as we'd expect.
     	context_test.go:62: store was not told to cancel
 ```
 
-## Write enough code to make it pass
+## 테스트가 통과하기에 충분한 만큼만 코드를 작성하자
 
 Remember to be disciplined with TDD. Write the _minimal_ amount of code to make our test pass.
 
