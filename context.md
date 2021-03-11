@@ -1,18 +1,18 @@
 # Context
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/context)**
+**[이 챕터의 모든 코드들을 이 곳에서 볼 수 있다.](https://github.com/quii/learn-go-with-tests/tree/main/context)**
 
-Software often kicks off long-running, resource-intensive processes (often in goroutines). If the action that caused this gets cancelled or fails for some reason you need to stop these processes in a consistent way through your application.
+소프트웨어(software)는 종종 오래 가동하고(long-running) 리소스를 많이 점유하는(resource-intensive) 프로세스(혹은 고루틴)를 시작한다. 만약 프로세스를 시작한 action이 어떠한 이유로 인하여 취소되거나 오류를 일으킬 경우(fails), 프로그램에서(your application) 실행된 프로세스들을 일관된 방법으로 멈춰줘야한다.
 
-If you don't manage this your snappy Go application that you're so proud of could start having difficult to debug performance problems.
+이것을 고려하지 않는다면(don't manage), 곧 당신이 자랑스러워 하는 그 멋진(snappy) 고 어플리케이션의 성능 문제를 디버그하는 데에 어려움을 겪게 될 것이다.
 
-In this chapter we'll use the package `context` to help us manage long-running processes.
+이 챕터에서는 우리는 `context` 패키지의 도움을 받아 오래 가동하는 프로세스를 관리해 볼 것이다.
 
-We're going to start with a classic example of a web server that when hit kicks off a potentially long-running process to fetch some data for it to return in the response.
+첫 예제는 응답으로 보낼 어떤 데이터를 가져오기 위해 잠재적으로 오래 가동할 수도 있는 프로세스를 시작하는 상투적인(classic) 웹 서버이다.
 
-We will exercise a scenario where a user cancels the request before the data can be retrieved and we'll make sure the process is told to give up.
+데이터를 가져오는 도중에 유저가 요청을 취소하는 경우를 상정해 볼 것이며, 우리는 이 때 프로세스가 중단될 수 있도록 할 것이다.
 
-I've set up some code on the happy path to get us started. Here is our server code.
+에러나 예외가 발생하지 않을 happy path 코드를 준비했다. 아래는 우리의 서버 코드이다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -22,7 +22,7 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-The function `Server` takes a `Store` and returns us a `http.HandlerFunc`. Store is defined as:
+`Server` 함수는 `Store` 인수를 받은 뒤 `http.HandlerFunc` 를 리턴한다. Store 는 다음과 같이 정의되어 있다:
 
 ```go
 type Store interface {
@@ -30,9 +30,9 @@ type Store interface {
 }
 ```
 
-The returned function calls the `store`'s `Fetch` method to get the data and writes it to the response.
+리턴된 함수는 `store`의 `Fetch` 메소드를 통해 데이터를 얻은 뒤 응답에 해당 데이터를 작성한다.
 
-We have a corresponding stub for `Store` which we use in a test.
+아래는 이 테스트에 쓰인 `Store`의 나머지 부분(stub, or 구현 부분)이다.
 
 ```go
 type StubStore struct {
@@ -58,7 +58,7 @@ func TestServer(t *testing.T) {
 }
 ```
 
-Now that we have a happy path, we want to make a more realistic scenario where the `Store` can't finish a`Fetch` before the user cancels the request.
+Happy path한 코드를 준비했으니 이제는 약간 더 현실성이 있는 경우를 상정해 볼 차례이다. 그 말인즉슨 유저가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못할 경우이다.
 
 ## Write the test first
 
