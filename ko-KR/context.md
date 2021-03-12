@@ -12,7 +12,7 @@
 
 데이터를 가져오는 도중에 유저가 요청을 취소하는 경우를 가정해보고 이 때 프로세스가 중단될 수 있도록 해봅시다.
 
-에러나 예외가 발생하지 않을 happy path한 코드를 준비했습니다. 아래의 서버 코드를 확인해봅시다.
+에러나 예외가 발생하지 않을 행복한 경로(happy path) 상의 코드를 준비했습니다. 아래의 서버 코드를 확인해봅시다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -30,9 +30,9 @@ type Store interface {
 }
 ```
 
-리턴된 함수는 `store`의 `Fetch` 메소드를 통해 데이터를 얻은 뒤 응답으로 해당 데이터를 작성합니다.
+리턴된 함수는 `store`의 `Fetch` 메소드를 통해 데이터를 얻은 뒤 응답으로 해당 데이터를 출력합니다.
 
-아래는 이 테스트에 쓰인 `Store`의 나머지 구현부분입니다.
+아래는 이 테스트에 쓰인 `Store`의 구현부분입니다.
 
 ```go
 type StubStore struct {
@@ -58,7 +58,7 @@ func TestServer(t *testing.T) {
 }
 ```
 
-Happy path한 코드가 준비되었으니 이제는 약간 더 현실성이 있는 경우를 가정해 볼 차례입니다. 유저가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못하는 경우를 생각해봅시다.
+행복한 경로 코드가 준비되었으니 이제는 약간 더 현실성이 있는 경우를 가정해 볼 차례입니다. 유저가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못하는 경우를 생각해봅시다.
 
 ## 우선 테스트를 작성해봅시다
 
@@ -71,7 +71,7 @@ type Store interface {
 }
 ```
 
-스파이를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 해봅시다. 또한 해당 구조체(it)게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꿔줍니다. 그리고 `Store` 인터페이스와 상응하도록 `Cancel` 메소드를 추가해줍니다.
+스파이를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 해봅시다. 또한 해당 구조체가 어떻게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꿔줍니다. 그리고 `Store` 인터페이스와 상응하도록 `Cancel` 메소드를 추가해줍니다.
 
 ```go
 type SpyStore struct {
@@ -117,9 +117,9 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
 
 > Context 패키지는 존재하는 context들로 부터 새 context들을 파생시키는 함수를 제공하며, 이를 사용할 경우 해당 context들은 트리를 형성합니다: 어떠한 context가 취소될 경우, 그것으로 부터 파생된 모든 context들이 취소됩니다.
 
-이 점을 주의하며, 요청이 주어질 경우, 해당 요청의 호출 스택을 따라 전파되어 모든 context가 취소될 수 있도록 context들을 파생시키는 것이 중요합니다.
+이 점을 주의하며 주어진 요청에 대한 취소 절차가 해당 요청의 호출 스택을 따라 전파되어 모든 context가 취소될 수 있도록 context들을 파생시키는 것이 중요합니다.
 
-`request` 에서 새로운 `cancellingCtx`를 파생시킴과 동시에 `cancel` 함수를 얻게 됩니다. 그리고나서 `time.AfterFunc`를 통해 해당 함수가 5 밀리초 후에 호출되도록 설정해봅시다. 마지막으로 `request.WithContext`를 통해 이 새 context를 사용해봅시다.
+`request` 에서 새로운 `cancellingCtx`를 파생시킴과 동시에 `cancel` 함수를 얻게 됩니다. 그리고나서 `time.AfterFunc`를 통해 해당 함수가 5 밀리초 후에 호출되도록 설정해봅시다. 마지막으로 `request.WithContext`를 통해 새로 얻은 context를 사용해봅시다.
 
 ## 테스트를 시도해봅시다
 
@@ -131,9 +131,9 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
     	context_test.go:62: store was not told to cancel
 ```
 
-## 테스트가 통과하기에 충분한 만큼만 코드를 작성해봅시다
+## 테스트가 통과할만큼만 코드를 작성해봅시다
 
-TDD에 익숙해지도록(disciplined) 해봅시다. *최소한의* 코드를 추가하여 테스트가 통과하도록 해봅시다.
+TDD를 숙지하며 테스트를 작성해봅시다. *최소한의* 코드를 추가하여 테스트가 통과하도록 해봅시다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -146,9 +146,9 @@ func Server(store Store) http.HandlerFunc {
 
 위와 같이 수정함으로써 테스트를 통과하기는 하지만 기분이 그리 좋지만은 않습니다.  당연한 얘기이지만 *모든 요청*에 대하여 데이터를 가져오기도 전에 `Store`를 취소하여서는 안됩니다.
 
-TDD에 익숙해짐으로써 테스트의 결점이 보이기 시작했습니다. 좋습니다!
+좋습니다! TDD를 숙지함으로써 테스트의 결점이 보이기 시작했습니다.
 
-Happy path한 테스트를 수정하여 `Store`(it)가 취소되지 않았음을 확인(assert)하도록 합니다.
+행복한 경로 테스트를 수정하여 `Store`가 취소되지 않았음을 확인하도록 해봅시다.
 
 ```go
 t.Run("returns data from store", func(t *testing.T) {
@@ -171,7 +171,7 @@ t.Run("returns data from store", func(t *testing.T) {
 })
 ```
 
-두개의 테스트를 실행해보면 happy path한 테스트는 이제 실패할 것입니다. 조금 더 실용적인 구현이 필요한 시점입니다.
+두개의 테스트를 실행해보면 행복한 경로 테스트는 이제 실패할 것입니다. 조금 더 실용적인 구현이 필요한 시점입니다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -196,13 +196,13 @@ func Server(store Store) http.HandlerFunc {
 
 위 코드를 살펴봅시다.
 
-`context` 에게는 `Done()`이라는 메소드가 있으며 이는 context가 "완료"되거나 "취소"될 경우 신호를 받는 채널을 리턴합니다. 해당 신호를 listen하여 해당 신호가 올 경우, `store.Cancel`을 호출하고 싶지만, `Store`가 그 전에 `Fetch`를 완료할 경우, 그 신호를 무시해줘야 합니다.
+`context` 에게는 `Done()`이라는 메소드가 있으며 이는 context가 "완료"되거나 "취소"될 경우 신호를 받는 채널을 리턴합니다. 해당 신호를 listen하여 해당 신호가 올 경우, `store.Cancel`을 호출하면 되지만, 만약 `Store`가 그 전에 `Fetch`를 완료할 경우, 그 신호를 무시해줘야 합니다.
 
-그러기 위해서는 고루틴에서 `Fetch`를 호출한 뒤 새로운 채널인 `data`에 결과를 보내줍니다. 그리고 `select` 문을 사용하여 두 비동기 프로세스를 경합시킨 뒤 응답을 작성하거나 `Cancel`을 수행합니다.
+그러기 위해서 고루틴에서 `Fetch`를 호출한 뒤 새로 만들 채널인 `data`에 결과를 보내줍시다. 그리고 `select` 문을 사용하여 두 비동기 프로세스를 경합시킨 뒤 응답을 출력하거나 `Cancel`을 수행합시다.
 
 ## 리팩토링
 
-스파이에 assertion 메소드들을 추가하여 테스트 코드를 리팩토링 해봅시다.
+스파이에 어서션 메소드들을 추가하여 테스트 코드를 리팩토링 해봅시다.
 
 ```go
 type SpyStore struct {
@@ -267,27 +267,27 @@ func TestServer(t *testing.T) {
 }
 ```
 
-위의 접근 방식은 작동하기는 하지만 자연스럽지는 않습니다.
+위의 접근 방식은 작동하기는 하지만 자연스러운가요?
 
-웹 서버에서 `Store`를 직접 취소하는데에 관여하는 것은 부자연스럽습니다. `Store`가 또 다른 slow-running 프로세스들에 의존하는 경우를 생각해 봐야 합니다. `Store.Cancel`이 올바르게 파생 context들에게 취소를 전파하도록 해야합니다.
+웹 서버에서 `Store`를 취소하는데에 직접 관여하는 것이 적절하다고 생각하시나요? `Store`가 또 다른 오래 걸리는 프로세스들에 의존하는 경우를 생각해 봐야 합니다. `Store.Cancel`이 올바르게 파생 context들에게 취소를 전파하도록 해야할 필요가 있습니다.
 
 `context`를 사용하는 주요 이유 중의 하나는 일관된 취소를 수행하기 위함입니다.
 
 [공식 고 문서에 의하면](https://golang.org/pkg/context/)
 
-> 들어오는 요청들에 대해 context를 생성하는 것이 좋습니다. 그리고 나가는 call은 context를 인수로 받는 것이 좋습니다. 두 과정 사이의 함수들을 호출할 때 해당 context를 반드시 전파하여야 하며, 원한다면 해당 context를 WithCancel, WithDeadline, WithTimeout, 혹은 WithValue를 이용해 파생시킨 context를 사용할 수도 있습니다. Context가 취소될 때 해당 context를 상속한 모든 context들 또한 취소됩니다.
+> 들어오는 요청들에 대해 context를 생성하는 것이 좋습니다. 그리고 내보내는 함수는(call) context를 인수로 받는 것이 좋습니다. 또한 두 과정 사이의 함수들을 호출할 때 해당 context를 반드시 전파하여야 하며, 원한다면 해당 context를 WithCancel, WithDeadline, WithTimeout, 혹은 WithValue를 이용해 파생시킨 context를 사용할 수도 있습니다. Context가 취소될 때 해당 context를 상속한 모든 context들 또한 취소됩니다.
 
 다시 [고 블로그: Context](https://blog.golang.org/context)를 살펴보면:
 
-> 구글에서는 고 프로그래머들로 하여금 모든 들어오는 요청과 나가는 요청 함수들의 모든 첫번째 인수를 context로 하도록 규정합니다. 이는 여러 팀에서 개발된 고 코드들이 서로 잘 작동하도록 합니다. Context는 간단한 방법을 통해 시간초과와 취소를 관리할 수 있도록 하며, 보안 증명서와 같은 중요한 값들이 고 프로그램내에서 올바르게 넘겨질 수 있도록 합니다.
+> 구글에서는 고 프로그래머들로 하여금 모든 들어오는 요청과 나가는 요청 함수들의 첫번째 인수를 context로 하도록 규정합니다. 이는 여러 팀에서 개발된 고 코드들이 서로 잘 작동하도록 합니다. Context는 간단한 방법을 통해 시간초과와 취소를 관리할 수 있도록 하며, 보안 증명서와 같은 중요한 값들이 고 프로그램내에서 올바르게 넘겨질 수 있도록 합니다.
 
 (잠시 시간을 내어 모든 함수가 context를 넘겨줘야 한다면 가져올 영향과 그것을 인간공학적인 관점에서 생각해 봅시다.)
 
-약간 불편하게 느껴진다면 좋습니다. though 해당 접근 방식을 따라하여 `context`를 `Store`에 넘겨 responsible하게 합니다. 이를 통해 해당 `context`를 그것에 의존하는 것들에 넘겨줄 수 있게 되고, 그 context들 또한 그것들을 멈추는 데에 responsible하게 됩니다.
+약간 불편하게 느껴진다면 좋습니다. 불편할지라도 해당 접근 방식을 따라하여 `context`를 `Store`에 넘겨 관여하게 해봅시다. 이를 통해 해당 `context`를 `Store`에 의존하는 것들에 넘겨줄 수 있게 되고, 그 context들 또한 그것들을 취소하는 데에 관여하게 됩니다.
 
-## 테스트를 먼저 작성해 봅시다
+## 우선 테스트를 작성해봅시다
 
-각 구성요소(their)가 담당하는 부분(responsibility)이 바뀌었으므로 테스트 또한 수정해줍니다. 핸들러가 담당하는 부분은 이제 단지 context를 `Store`를 통해 전파시키는 일입니다. 또한 `Store`가 취소될 경우 보내지는 오류를 handle합니다.
+각 구성요소가 관여하는 부분이 바뀌었으므로 테스트 또한 수정해줍니다. 핸들러가 담당하는 부분은 이제 단지 context를 `Store`를 통해 전파시키는 일입니다. 또한 `Store`가 취소될 경우 보내지는 오류를 처리합니다.
 
 `Store` 인터페이스를 수정하여 새 responsibilities를 수행할 수 있도록 합니다.
 
@@ -341,17 +341,17 @@ func (s *SpyStore) Fetch(ctx context.Context) (string, error) {
 }
 ```
 
-Spy를 수정하여 `context`를 실제로 사용하도록 해봅시다.
+스파이를 수정하여 `context`를 실제로 사용하도록 해봅시다.
 
-결과값의 문자열을 한글자씩 append하는 느린 모의 프로세스를 고루틴을 이용해 만듭니다. 고루틴이 완료됨과 동시에 `data` 채널에 결과 값을 보내줍니다. 그리고 고루틴에서 `ctx.Done`을 listen하며 값이 들어올 경우 작업을 중단하게 해봅시다.
+결과값의 문자열을 한글자씩 덧붙이는 느린 모의 프로세스 고루틴을 만듭시다. 고루틴이 완료됨과 동시에 `data` 채널에 결과값을 보내줍시다. 그리고 고루틴에서 `ctx.Done`을 listen하며 값이 들어올 경우 작업을 중단하게 해봅시다.
 
-마지막으로 `select` 문을 사용하여 해당 고루틴이 완료되거나 취소되는 것을 확인하도록 합니다.
+마지막으로 또다른 `select` 문을 사용하여 해당 고루틴이 완료되거나 취소되는 것을 기다리도록 합니다.
 
-이전의 접근방식과 비슷하지만, 이번에는 고의 동시성 primitive를 사용하여 두개의 비동기 프로세스를 경합하게 하여 리턴할 값을 정해줍니다.
+이전의 접근방식과 비슷하지만 이번에는 고의 동시성 기능을 사용하여 두개의 비동기 프로세스를 경합시켜 리턴할 값을 정하게 됩니다.
 
-`context`를 사용하는 함수들과 메소드들을 만들 경우 아래와 비슷한 접근 방식을 사용하게 되므로 작동 방식을 이해해보도록 합시다.
+`context`를 사용하는 함수들과 메소드들을 만들 경우 아래와 비슷한 접근 방식을 사용하게 되므로 집중하여 작동 방식을 이해해보도록 합시다.
 
-이제 테스트들을 수정해줄 차례입니다. 이전에 진행한 취소 테스트를 지워줌으로써(comment out) happy path한 테스트를 수정해 봅시다.
+이제 테스트들을 수정해줄 차례입니다. 이전에 진행한 취소 테스트를 지워줌으로써 행복한 경로 테스트를 수정해 봅시다.
 
 ```go
 t.Run("returns data from store", func(t *testing.T) {
@@ -379,7 +379,7 @@ t.Run("returns data from store", func(t *testing.T) {
     	context_test.go:22: got "", want "hello, world"
 ```
 
-## 테스트가 통과하기에 충분한 만큼만 코드를 작성해봅시다
+## 테스트가 통과할만큼만 코드를 작성해봅시다
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -390,11 +390,11 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-Happy path는 이제... happy합니다. 이제 다른 테스트를 수정해 줄 차례입니다.
+행복한 경로는 이제 다시... 행복합니다. 이번에는 다른 테스트를 수정해 줄 차례입니다.
 
-## 테스트를 먼저 작성해봅시다
+## 우선 테스트를 작성해봅시다
 
-오류가 발생할 경우 응답으로 어떤 것도 보내지지 않는 것을 테스트해야 합니다. 안타깝게도 `httptest.ResponseRecorder`는 이러한 기능을 제공하지 않으므로 spy를 추가하여 이를 테스트 해봅시다.
+오류가 발생할 경우 응답으로 아무것도 출력되지 않는 것을 테스트해야 합니다. 안타깝게도 `httptest.ResponseRecorder`는 이러한 기능을 제공하지 않으므로 스파이를 추가하여 이를 테스트 해봅시다.
 
 ```go
 type SpyResponseWriter struct {
@@ -449,7 +449,7 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
     	context_test.go:47: a response should not have been written
 ```
 
-## 테스트가 통과하기에 충분한 만큼만 코드를 작성해봅시다
+## 테스트가 통과할만큼만 코드를 작성해봅시다
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -457,7 +457,7 @@ func Server(store Store) http.HandlerFunc {
 		data, err := store.Fetch(r.Context())
 
 		if err != nil {
-			return // todo: 원하는 방식으로 로그를 남겨봅시다
+			return // todo: log error however you like
 		}
 
 		fmt.Fprint(w, data)
@@ -465,7 +465,7 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-이제 서버 코드를 확인해보면 매우 간단해진 것을 확인할 수 있습니다. 직접적으로 취소하는 데에 관여하지 않고 단순히 `context`를 전파하고 이후로(downstream) 호출된 함수들에게 의존하기 때문입니다.
+이제 서버 코드가 매우 간단해진 것을 확인할 수 있습니다. 직접적으로 취소하는 데에 관여하지 않고 단순히 `context`를 전파하고 이후로 호출된 함수들에게 의존하기 때문입니다.
 
 ## 마치며
 
@@ -474,20 +474,20 @@ func Server(store Store) http.HandlerFunc {
 - 클라이언트가 요청을 취소할 때의 HTTP 핸들러를 테스트 하는 방법
 - Context를 사용하여 취소를 관리하는 법
 - `context`를 인수로 받는 함수를 작성하고 고루틴, `select` 문, 채널을 이용하여 해당 context를 취소하는 방법
-- Google의 가이드라인에 나와있는 데로 요청에 대한 호출 스택에 scoped context를 전파하여 취소를 관리하는 법
+- 구글의 가이드라인에 나와있는 데로 요청에 대한 호출 스택에 scoped context를 전파하여 취소를 관리하는 법
 - `http.ResponseWriter`의 스파이를 작성하는 법
 
 ### context.Value는 무엇인가요?
 
-[Michal Štrba](https://faiface.github.io/post/context-should-go-away-go2/) and I have a similar opinion.
+필자와 [Michal Štrba](https://faiface.github.io/post/context-should-go-away-go2/)는 이에 대해 같은 의견을 가지고 있습니다.
 
-> 만약 ctx.Value를 내 회사(존재하지는 않지만)에서 사용한다면, 해고당할 각오를 해야할 것입니다
+> 만약 ctx.Value를 내 회사(존재하지는 않지만)에서 사용한다면, 해고당합니다
 
-몇몇의 엔지니어들은 `context`를 통해 값들을 전해주는 것이 *편리하다는* 이유로 옹호합니다.
+몇몇 엔지니어들은 `context`를 통해 값들을 전해주는 것이 *편리하다는* 이유로 옹호합니다.
 
 편의성은 보통 좋지 않은 코드를 만들어냅니다.
 
-`context.Values`의 문제점은 그것은 단순히 타입이 지정되지 않은 맵이기 때문에 타입 safety가 보장되지 않고 실제로는 가지고 있지 않은 값을 handle해줘야 할 수 있습니다. 한 모듈에서 다른 모듈로 보낼 경우 맵 키들의 대응 테이블(coupling)을 만들어야 하고, 코드에서 몇 부분이 수정될 경우 걷잡을 수 없게 되어버립니다.
+`context.Values`의 문제점은 그것은 단순히 타입이 지정되지 않은 맵이기 때문에 타입 안전성이 보장되지 않고 실제로는 가지고 있지 않은 값을 처리해줘야 할 수 있습니다. 한 모듈에서 다른 모듈로 보낼 경우 맵 키들의 대응 테이블(coupling)을 만들어야 하고, 코드에서 몇 부분이 수정될 경우 걷잡을 수 없게 되어버립니다.
 
 요약하자면, **함수에 줄 값들이 필요하다면, `context.Value`를 사용하지 말고 타입이 지정된 인수로 넘겨줘야 합니다**. 이는 정적으로 해당 값들을 체크하는 것과 여러 사람이 쉽게 볼 수 있는 문서 작성에 있어서 반드시 필요한 부분입니다.
 
