@@ -133,7 +133,8 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
 
 ## 테스트가 통과하기에 충분한 만큼만 코드를 작성하자
 
-Remember to be disciplined with TDD. Write the _minimal_ amount of code to make our test pass.
+***COMMENT: 새 문체 시작***
+TDD와 익숙해지도록(disciplined) 해봅시다. _최소한의_ 코드를 추가하여 테스트가 통과하도록 해봅시다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -144,11 +145,11 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-This makes this test pass but it doesn't feel good does it! We surely shouldn't be cancelling `Store` before we fetch on _every request_.
+이렇게 함으로써 테스트를 통과하기는 하지만 기분이 그리 좋지만은 않습니다.  당연한 얘기이지만 *모든 요청*에 대하여 데이터를 가져오기도 전에 `Store`를 취소하여서는 안됩니다.
 
-By being disciplined it highlighted a flaw in our tests, this is a good thing!
+TDD에 익숙해짐으로써 테스트의 결점이 보이기 시작했습니다. 좋습니다!
 
-We'll need to update our happy path test to assert that it does not get cancelled.
+Happy path한 테스트를 수정하여 `Store`(it)가 취소되지 않았음을 확인(assert)하도록 합니다.
 
 ```go
 t.Run("returns data from store", func(t *testing.T) {
@@ -171,7 +172,7 @@ t.Run("returns data from store", func(t *testing.T) {
 })
 ```
 
-Run both tests and the happy path test should now be failing and now we're forced to do a more sensible implementation.
+두개의 테스트를 실행해보면 happy path 테스트는 이제 실패할 것입니다. 조금 더 실용적인 구현이 필요한 시점입니다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -194,11 +195,11 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-What have we done here?
+위 코드를 살펴봅시다.
 
-`context` has a method `Done()` which returns a channel which gets sent a signal when the context is "done" or "cancelled". We want to listen to that signal and call `store.Cancel` if we get it but we want to ignore it if our `Store` manages to `Fetch` before it.
+`context` 에게는 `Done()`이라는 메소드가 있으며 이는 context가 "완료"되거나 "취소"될 경우 신호(signal)를 받는 채널을 리턴합니다. 해당 신호를 listen하여 해당 신호가 올 경우, `store.Cancel`을 호출하고 싶지만, `Store`가 그 전에 `Fetch`를 완료할 경우, 그 신호를 무시해줘야 합니다.
 
-To manage this we run `Fetch` in a goroutine and it will write the result into a new channel `data`. We then use `select` to effectively race to the two asynchronous processes and then we either write a response or `Cancel`.
+그러기 위해서 고루틴에서 `Fetch`를 호출한 뒤 새로운 채널인 `data`에 결과를 보내줍니다. 그리고 `select`문을 사용하여 두 비동기 프로세스를 경합(race)시킨 뒤 응답을 작성하거나 `Cancel`을 수행합니다.
 
 ## Refactor
 
