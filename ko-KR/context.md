@@ -1,18 +1,18 @@
 # Context
 
-**[이 챕터의 모든 코드를 이 곳에서 볼 수 있다.](https://github.com/quii/learn-go-with-tests/tree/main/context)**
+**[이 챕터의 모든 코드를 이 곳에서 확인할 수 있습니다.](https://github.com/quii/learn-go-with-tests/tree/main/context)**
 
-소프트웨어(software)는 종종 오래 가동하고(long-running) 리소스를 많이 점유하는(resource-intensive) 프로세스(혹은 고루틴)를 시작한다. 만약 프로세스를 시작한 action이 어떠한 이유로 인하여 취소되거나 오류를 일으킬 경우(fails), 프로그램에서(your application) 실행된 프로세스들을 일관된 방법으로 멈춰줘야한다.
+소프트웨어는 종종 오래 가동하고 리소스를 많이 점유하는 프로세스(혹은 고루틴)를 시작합니다. 만약 프로세스를 시작한 주체(action)가 어떠한 이유로 인하여 취소되거나 오류를 일으킬 경우, 프로그램에서 실행된 프로세스들을 일관된 방법으로 멈춰줄 필요가 있습니다.
 
-이것을 고려하지 않는다면(don't manage), 곧 당신이 자랑스러워 하는 그 멋진(snappy) 고 어플리케이션의 성능 문제를 디버그하는 데에 어려움을 겪게 될 것이다.
+이것을 고려하지 않는다면, 곧 당신이 자랑스러워 하는 그 멋진 고 어플리케이션의 성능 문제를 디버그하는 데에 어려움을 겪게 될 것입니다.
 
-이 챕터에서는 우리는 `context` 패키지의 도움을 받아 오래 가동하는 프로세스를 관리해 볼 것이다.
+이 챕터에서는 `context` 패키지의 도움을 받아 오래 가동하는 프로세스를 관리해 볼 것입니다.
 
-첫 예제는 응답으로 보낼 어떤 데이터를 가져오기 위해 잠재적으로 오래 가동할 수도 있는 프로세스를 시작하는 상투적인(classic) 웹 서버이다.
+응답으로 보낼 어떠한 데이터를 가져오기 위해 잠재적으로 오래 가동할 수도 있는 프로세스를 시작하는 전형적인 웹 서버와 함께 시작해봅시다.
 
-데이터를 가져오는 도중에 유저가 요청을 취소하는 경우를 상정해 볼 것이며, 우리는 이 때 프로세스가 중단될 수 있도록 할 것이다.
+데이터를 가져오는 도중에 유저가 요청을 취소하는 경우를 가정해보고 이 때 프로세스가 중단될 수 있도록 해봅시다.
 
-에러나 예외가 발생하지 않을 happy path 코드를 준비했다. 아래는 우리의 서버 코드이다.
+에러나 예외가 발생하지 않을 happy path한 코드를 준비했습니다. 아래의 서버 코드를 확인해봅시다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -22,7 +22,7 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-`Server` 함수는 `Store` 인수를 받은 뒤 `http.HandlerFunc` 를 리턴한다. Store 는 다음과 같이 정의되어 있다:
+`Server` 함수는 `Store` 인수를 받은 뒤 `http.HandlerFunc` 를 리턴합니다. Store는 다음과 같이 정의되어 있습니다:
 
 ```go
 type Store interface {
@@ -30,9 +30,9 @@ type Store interface {
 }
 ```
 
-리턴된 함수는 `store`의 `Fetch` 메소드를 통해 데이터를 얻은 뒤 응답에 해당 데이터를 작성한다.
+리턴된 함수는 `store`의 `Fetch` 메소드를 통해 데이터를 얻은 뒤 응답으로 해당 데이터를 작성합니다.
 
-아래는 이 테스트에 쓰인 `Store`의 나머지 부분(stub, or 구현 부분)이다.
+아래는 이 테스트에 쓰인 `Store`의 나머지 구현부분입니다.
 
 ```go
 type StubStore struct {
@@ -58,11 +58,11 @@ func TestServer(t *testing.T) {
 }
 ```
 
-Happy path한 코드를 준비했으니 이제는 약간 더 현실성이 있는 경우를 상정해 볼 차례이다. 그 말인즉슨 유저가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못할 경우이다.
+Happy path한 코드가 준비되었으니 이제는 약간 더 현실성이 있는 경우를 가정해 볼 차례입니다. 유저가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못하는 경우를 생각해봅시다.
 
-## 먼저 테스트를 작성하자
+## 우선 테스트를 작성해봅시다
 
-우리의 핸들러(http.HandlerFunc)에서 `Store`를 중단시킬 방법이 필요하므로 인터페이스를 그에 맞게 바꿔주자.
+핸들러에서 `Store`를 중단시킬 방법이 필요하므로 인터페이스를 그에 맞게 바꿔줍시다.
 
 ```go
 type Store interface {
@@ -71,7 +71,7 @@ type Store interface {
 }
 ```
 
-우리는 우리의 spy를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 하자. 또한 우리는 해당 구조체(it)가 어떻게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꾸자. 그리고 `Store` 인터페이스와 상응하도록 `Cancel` 메소드를 추가해주자.
+스파이를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 해봅시다. 또한 해당 구조체(it)게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꿔줍니다. 그리고 `Store` 인터페이스와 상응하도록 `Cancel` 메소드를 추가해줍니다.
 
 ```go
 type SpyStore struct {
@@ -89,7 +89,7 @@ func (s *SpyStore) Cancel() {
 }
 ```
 
-100 밀리초가 지나기 전에 요청을 취소하는 테스트를 추가해보고, store가 취소되는지 확인해보자.
+100 밀리초가 지나기 전에 요청을 취소하는 테스트를 추가해보고, store가 취소되는지 확인해봅시다.
 
 ```go
 t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
@@ -113,17 +113,17 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
   })
 ```
 
-[Go Blog: Context](https://blog.golang.org/context)에 따르면
+[고 블로그: Context](https://blog.golang.org/context)에 따르면
 
-> Context 패키지는 존재하는 Context들로 부터 새 Context의 값들을 파생시키는(derive) 함수를 제공하고, 이 때 이 값들은 트리를 형성한다: 어떤 Context가 취소될 경우, 그것으로 부터 파생된 모든 Context들이 취소된다.
+> Context 패키지는 존재하는 context들로 부터 새 context들을 파생시키는 함수를 제공하며, 이를 사용할 경우 해당 context들은 트리를 형성합니다: 어떠한 context가 취소될 경우, 그것으로 부터 파생된 모든 context들이 취소됩니다.
 
-이 점을 주의하여, 요청이 주어질 경우, 해당 요청의 호출 스택을 따라 모든 Context가 취소될 수 있도록 Context들을 파생시키는 것이 중요하다.
+이 점을 주의하며, 요청이 주어질 경우, 해당 요청의 호출 스택을 따라 전파되어 모든 context가 취소될 수 있도록 context들을 파생시키는 것이 중요합니다.
 
-우리는 `request` 에서 새로운 `cancellingCtx`를 파생시킴과 동시에 `cancel` 함수를 얻게 된다. 그리고나서 `time.AfterFunc`를 통해 해당 함수가 5 밀리초 후에 호출되도록 설정한다. 마지막으로 우리는 `request.WithContext`를 통하여 이 새 Context를 사용할 것이다.
+`request` 에서 새로운 `cancellingCtx`를 파생시킴과 동시에 `cancel` 함수를 얻게 됩니다. 그리고나서 `time.AfterFunc`를 통해 해당 함수가 5 밀리초 후에 호출되도록 설정해봅시다. 마지막으로 `request.WithContext`를 통해 이 새 context를 사용해봅시다.
 
-## 테스트를 돌려보자
+## 테스트를 시도해봅시다
 
-우리가 예상하는 데로 테스트는 실패할 것이다.
+예상대로 테스트는 실패할 것입니다.
 
 ```go
 --- FAIL: TestServer (0.00s)
@@ -131,10 +131,9 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
     	context_test.go:62: store was not told to cancel
 ```
 
-## 테스트가 통과하기에 충분한 만큼만 코드를 작성하자
+## 테스트가 통과하기에 충분한 만큼만 코드를 작성해봅시다
 
-***COMMENT: 새 문체 시작***
-TDD와 익숙해지도록(disciplined) 해봅시다. _최소한의_ 코드를 추가하여 테스트가 통과하도록 해봅시다.
+TDD에 익숙해지도록(disciplined) 해봅시다. *최소한의* 코드를 추가하여 테스트가 통과하도록 해봅시다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -145,7 +144,7 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-이렇게 함으로써 테스트를 통과하기는 하지만 기분이 그리 좋지만은 않습니다.  당연한 얘기이지만 *모든 요청*에 대하여 데이터를 가져오기도 전에 `Store`를 취소하여서는 안됩니다.
+위와 같이 수정함으로써 테스트를 통과하기는 하지만 기분이 그리 좋지만은 않습니다.  당연한 얘기이지만 *모든 요청*에 대하여 데이터를 가져오기도 전에 `Store`를 취소하여서는 안됩니다.
 
 TDD에 익숙해짐으로써 테스트의 결점이 보이기 시작했습니다. 좋습니다!
 
@@ -172,7 +171,7 @@ t.Run("returns data from store", func(t *testing.T) {
 })
 ```
 
-두개의 테스트를 실행해보면 happy path 테스트는 이제 실패할 것입니다. 조금 더 실용적인 구현이 필요한 시점입니다.
+두개의 테스트를 실행해보면 happy path한 테스트는 이제 실패할 것입니다. 조금 더 실용적인 구현이 필요한 시점입니다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -197,13 +196,13 @@ func Server(store Store) http.HandlerFunc {
 
 위 코드를 살펴봅시다.
 
-`context` 에게는 `Done()`이라는 메소드가 있으며 이는 context가 "완료"되거나 "취소"될 경우 신호(signal)를 받는 채널을 리턴합니다. 해당 신호를 listen하여 해당 신호가 올 경우, `store.Cancel`을 호출하고 싶지만, `Store`가 그 전에 `Fetch`를 완료할 경우, 그 신호를 무시해줘야 합니다.
+`context` 에게는 `Done()`이라는 메소드가 있으며 이는 context가 "완료"되거나 "취소"될 경우 신호를 받는 채널을 리턴합니다. 해당 신호를 listen하여 해당 신호가 올 경우, `store.Cancel`을 호출하고 싶지만, `Store`가 그 전에 `Fetch`를 완료할 경우, 그 신호를 무시해줘야 합니다.
 
-그러기 위해서 고루틴에서 `Fetch`를 호출한 뒤 새로운 채널인 `data`에 결과를 보내줍니다. 그리고 `select`문을 사용하여 두 비동기 프로세스를 경합(race)시킨 뒤 응답을 작성하거나 `Cancel`을 수행합니다.
+그러기 위해서는 고루틴에서 `Fetch`를 호출한 뒤 새로운 채널인 `data`에 결과를 보내줍니다. 그리고 `select` 문을 사용하여 두 비동기 프로세스를 경합시킨 뒤 응답을 작성하거나 `Cancel`을 수행합니다.
 
 ## 리팩토링
 
-Spy에 assertion 메소드들을 추가하여 테스트 코드를 리팩토링 해봅시다.
+스파이에 assertion 메소드들을 추가하여 테스트 코드를 리팩토링 해봅시다.
 
 ```go
 type SpyStore struct {
@@ -227,7 +226,7 @@ func (s *SpyStore) assertWasNotCancelled() {
 }
 ```
 
-Spy를 생성할 때 `*testing.T`를 잊지 말도록 합시다.
+스파이를 생성할 때 `*testing.T`를 잊지 말도록 합시다.
 
 ```go
 func TestServer(t *testing.T) {
@@ -268,21 +267,21 @@ func TestServer(t *testing.T) {
 }
 ```
 
-위 접근 방식은 작동하기는 하지만 자연스럽지는 않습니다.
+위의 접근 방식은 작동하기는 하지만 자연스럽지는 않습니다.
 
-웹 서버에서 `Store`를 직접 취소하는데에 관여하는 것은 부자연스럽습니다. `Store`가 또 다른 slow-running 프로세스들에 의존하는 경우를 생각해 봐야 합니다. `Store.Cancel`이 올바르게 파생 context들에게 취소를 전파(propagate)하도록 해야합니다.
+웹 서버에서 `Store`를 직접 취소하는데에 관여하는 것은 부자연스럽습니다. `Store`가 또 다른 slow-running 프로세스들에 의존하는 경우를 생각해 봐야 합니다. `Store.Cancel`이 올바르게 파생 context들에게 취소를 전파하도록 해야합니다.
 
 `context`를 사용하는 주요 이유 중의 하나는 일관된 취소를 수행하기 위함입니다.
 
 [공식 고 문서에 의하면](https://golang.org/pkg/context/)
 
-> 들어오는 요청들은 context를 생성하는 것이 좋습니다. 그리고 나가는 call은 context를 인수로 받는 것이 좋습니다. 두 과정의 사이의 함수들을 호출할 때 해당 context를 반드시 전파하여야 하며, 원한다면 해당 context를 WithCancel, WithDeadline, WithTimeout, 혹은 WithValue를 이용해 파생시킨 context를 상ㅇ할 수도 있습니다. Context가 취소될 때 해당 context를 상속(derived from)한 모든 context들 또한 취소됩니다.
+> 들어오는 요청들에 대해 context를 생성하는 것이 좋습니다. 그리고 나가는 call은 context를 인수로 받는 것이 좋습니다. 두 과정 사이의 함수들을 호출할 때 해당 context를 반드시 전파하여야 하며, 원한다면 해당 context를 WithCancel, WithDeadline, WithTimeout, 혹은 WithValue를 이용해 파생시킨 context를 사용할 수도 있습니다. Context가 취소될 때 해당 context를 상속한 모든 context들 또한 취소됩니다.
 
-다시 [Go Blog: Context](https://blog.golang.org/context)를 살펴보면:
+다시 [고 블로그: Context](https://blog.golang.org/context)를 살펴보면:
 
-> 구글에서는 고 프로그래머들로 하여금 모든 들어오는 요청과 나가는 요청 함수들의 모든 첫번째 인수를 context로 하도록 규정합니다. 이는 여러 팀에서 개발된 고 코드들이 서로 잘 작동하도록 합니다. Context는 간단한 방법을 통해 시간초과(timeout)와 취소를 관리할 수 있도록 하며, 보안 증명과 같은 중요한 값들이 고 프로그램에서 올바르게 이동되도록 합니다.
+> 구글에서는 고 프로그래머들로 하여금 모든 들어오는 요청과 나가는 요청 함수들의 모든 첫번째 인수를 context로 하도록 규정합니다. 이는 여러 팀에서 개발된 고 코드들이 서로 잘 작동하도록 합니다. Context는 간단한 방법을 통해 시간초과와 취소를 관리할 수 있도록 하며, 보안 증명서와 같은 중요한 값들이 고 프로그램내에서 올바르게 넘겨질 수 있도록 합니다.
 
-(잠시 시간을 내어 모든 함수가 context를 보낼 경우의 영향과 인간공학(ergonomics)적인 관점에서 생각해 봅시다.)
+(잠시 시간을 내어 모든 함수가 context를 넘겨줘야 한다면 가져올 영향과 그것을 인간공학적인 관점에서 생각해 봅시다.)
 
 약간 불편하게 느껴진다면 좋습니다. though 해당 접근 방식을 따라하여 `context`를 `Store`에 넘겨 responsible하게 합니다. 이를 통해 해당 `context`를 그것에 의존하는 것들에 넘겨줄 수 있게 되고, 그 context들 또한 그것들을 멈추는 데에 responsible하게 됩니다.
 
@@ -494,13 +493,13 @@ func Server(store Store) http.HandlerFunc {
 
 #### 하지만...
 
-On other hand, it can be helpful to include information that is orthogonal to a request in a context, such as a trace id. Potentially this information would not be needed by every function in your call-stack and would make your functional signatures very messy.
+Trace id와 같이 요청과 관련없는(orthogonal) 정보를 이용해야 하는 것에 도움을 줄 수 있습니다. 호출 스택의 모든 함수에서 이 정보를 필요로 할 가능성은 낮은 데다 이를 함수 인수로 포함할 경우 함수의 signature가 복잡해질 수 있습니다.
 
-[Jack Lindamood says **Context.Value should inform, not control**](https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39)
+[Jack Lindamood는 **Context.Value는 흐름을 제어하기 보다는 정보만 제공해야한다고 합니다**](https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39)
 
-> The content of context.Value is for maintainers not users. It should never be required input for documented or expected results.
+> context.Value는 유저를 위한 것이 아니라 관리자를 위한 것입니다. expected하거나 documented한 결과 값에 필요한 입력값이 되어서는 절대 안됩니다.
 
-### Additional material
+### 참고자료
 
-- I really enjoyed reading [Context should go away for Go 2 by Michal Štrba](https://faiface.github.io/post/context-should-go-away-go2/). His argument is that having to pass `context` everywhere is a smell, that it's pointing to a deficiency in the language in respect to cancellation. He says it would better if this was somehow solved at the language level, rather than at a library level. Until that happens, you will need `context` if you want to manage long running processes.
-- The [Go blog further describes the motivation for working with `context` and has some examples](https://blog.golang.org/context)
+- 필자는 [Michal Štrba의 Go 2에서는 context가 없어져야한다](https://faiface.github.io/post/context-should-go-away-go2/)를 흥미롭게 읽었습니다. 그가 주장하는 바는 `context`를 모든 곳에서 넘겨줘야하는 것은 탐탁하지 않고(a smell) 이는 고 언어가 가진 취소를 관리하는 데에 있어서의 부족함을 드러낸다는 것입니다. 그는 또한 이러한 문제점이 라이브러리 레벨이 아닌 언어적인 레벨에서 수정되기를 바랍니다. 이러한 문제점이 해결되기 전까지는 오래 가동하는 프로세스를 관리하는 데에 있어 `context`는 반드시 필요한 존재입니다.
+- [고 블로그에서 `context`를 사용해야하는 이유와 몇몇 예제를 추가적으로 다루고 있습니다.](https://blog.golang.org/context)
