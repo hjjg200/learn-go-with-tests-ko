@@ -288,9 +288,9 @@ func TestServer(t *testing.T) {
 
 ## 테스트를 먼저 작성해 봅시다
 
-We'll have to change our existing tests as their responsibilities are changing. The only thing our handler is responsible for now is making sure it sends a context through to the downstream `Store` and that it handles the error that will come from the `Store` when it is cancelled.
+각 구성요소(their)가 담당하는 부분(responsibility)이 바뀌었으므로 테스트 또한 수정해줍니다. 핸들러가 담당하는 부분은 이제 단지 context를 `Store`를 통해 전파시키는 일입니다. 또한 `Store`가 취소될 경우 보내지는 오류를 handle합니다.
 
-Let's update our `Store` interface to show the new responsibilities.
+`Store` 인터페이스를 수정하여 새 responsibilities를 수행할 수 있도록 합니다.
 
 ```go
 type Store interface {
@@ -298,7 +298,7 @@ type Store interface {
 }
 ```
 
-Delete the code inside our handler for now
+우선 핸들러 내부의 코드를 지워줍시다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -307,7 +307,7 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-Update our `SpyStore`
+`SpyStore`를 수정해줍시다.
 
 ```go
 type SpyStore struct {
@@ -342,17 +342,17 @@ func (s *SpyStore) Fetch(ctx context.Context) (string, error) {
 }
 ```
 
-We have to make our spy act like a real method that works with `context`.
+Spy를 수정하여 `context`를 실제로 사용하도록 해봅시다.
 
-We are simulating a slow process where we build the result slowly by appending the string, character by character in a goroutine. When the goroutine finishes its work it writes the string to the `data` channel. The goroutine listens for the `ctx.Done` and will stop the work if a signal is sent in that channel.
+결과값의 문자열을 한글자씩 append하는 느린 모의 프로세스를 고루틴을 이용해 만듭니다. 고루틴이 완료됨과 동시에 `data` 채널에 결과 값을 보내줍니다. 그리고 고루틴에서 `ctx.Done`을 listen하며 값이 들어올 경우 작업을 중단하게 해봅시다.
 
-Finally the code uses another `select` to wait for that goroutine to finish its work or for the cancellation to occur.
+마지막으로 `select` 문을 사용하여 해당 고루틴이 완료되거나 취소되는 것을 확인하도록 합니다.
 
-It's similar to our approach from before, we use Go's concurrency primitives to make two asynchronous processes race each other to determine what we return.
+이전의 접근방식과 비슷하지만, 이번에는 고의 동시성 primitive를 사용하여 두개의 비동기 프로세스를 경합하게 하여 리턴할 값을 정해줍니다.
 
-You'll take a similar approach when writing your own functions and methods that accept a `context` so make sure you understand what's going on.
+`context`를 사용하는 함수들과 메소드들을 만들 경우 아래와 비슷한 접근 방식을 사용하게 되므로 작동 방식을 이해해보도록 합시다.
 
-Finally we can update our tests. Comment out our cancellation test so we can fix the happy path test first.
+이제 테스트들을 수정해줄 차례입니다. 이전에 진행한 취소 테스트를 지워줌으로써(comment out) happy path한 테스트를 수정해 봅시다.
 
 ```go
 t.Run("returns data from store", func(t *testing.T) {
@@ -371,7 +371,7 @@ t.Run("returns data from store", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 테스트를 시도해봅시다
 
 ```
 === RUN   TestServer/returns_data_from_store
@@ -380,7 +380,7 @@ t.Run("returns data from store", func(t *testing.T) {
     	context_test.go:22: got "", want "hello, world"
 ```
 
-## Write enough code to make it pass
+## 테스트가 통과하기에 충분한 만큼만 코드를 작성해봅시다
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -391,11 +391,11 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-Our happy path should be... happy. Now we can fix the other test.
+Happy path는 이제... happy합니다. 이제 다른 테스트를 수정해 줄 차례입니다.
 
-## Write the test first
+## 테스트를 먼저 작성해봅시다
 
-We need to test that we do not write any kind of response on the error case. Sadly `httptest.ResponseRecorder` doesn't have a way of figuring this out so we'll have to role our own spy to test for this.
+오류가 발생할 경우 응답으로 어떤 것도 보내지지 않는 것을 테스트해야 합니다. 안타깝게도 `httptest.ResponseRecorder`는 이러한 기능을 제공하지 않으므로 spy를 추가하여 이를 테스트 해봅시다.
 
 ```go
 type SpyResponseWriter struct {
@@ -417,7 +417,7 @@ func (s *SpyResponseWriter) WriteHeader(statusCode int) {
 }
 ```
 
-Our `SpyResponseWriter` implements `http.ResponseWriter` so we can use it in the test.
+위의 `SpyResponseWriter`는 `http.ResponseWriter` 인터페이스와 상응하기에 테스트에 사용할 수 있습니다.
 
 ```go
 t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
@@ -440,7 +440,7 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 테스트를 시도해봅시다
 
 ```
 === RUN   TestServer
@@ -450,7 +450,7 @@ t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
     	context_test.go:47: a response should not have been written
 ```
 
-## Write enough code to make it pass
+## 테스트가 통과하기에 충분한 만큼만 코드를 작성해봅시다
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -458,7 +458,7 @@ func Server(store Store) http.HandlerFunc {
 		data, err := store.Fetch(r.Context())
 
 		if err != nil {
-			return // todo: log error however you like
+			return // todo: 원하는 방식으로 로그를 남겨봅시다
 		}
 
 		fmt.Fprint(w, data)
@@ -466,33 +466,33 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-We can see after this that the server code has become simplified as it's no longer explicitly responsible for cancellation, it simply passes through `context` and relies on the downstream functions to respect any cancellations that may occur.
+이제 서버 코드를 확인해보면 매우 간단해진 것을 확인할 수 있습니다. 직접적으로 취소하는 데에 관여하지 않고 단순히 `context`를 전파하고 이후로(downstream) 호출된 함수들에게 의존하기 때문입니다.
 
-## Wrapping up
+## 마치며
 
-### What we've covered
+### 이 챕터에서 다뤄본 것들
 
-- How to test a HTTP handler that has had the request cancelled by the client.
-- How to use context to manage cancellation.
-- How to write a function that accepts `context` and uses it to cancel itself by using goroutines, `select` and channels.
-- Follow Google's guidelines as to how to manage cancellation by propagating request scoped context through your call-stack.
-- How to roll your own spy for `http.ResponseWriter` if you need it.
+- 클라이언트가 요청을 취소할 때의 HTTP 핸들러를 테스트 하는 방법
+- Context를 사용하여 취소를 관리하는 법
+- `context`를 인수로 받는 함수를 작성하고 고루틴, `select` 문, 채널을 이용하여 해당 context를 취소하는 방법
+- Google의 가이드라인에 나와있는 데로 요청에 대한 호출 스택에 scoped context를 전파하여 취소를 관리하는 법
+- `http.ResponseWriter`의 스파이를 작성하는 법
 
-### What about context.Value ?
+### context.Value는 무엇인가요?
 
 [Michal Štrba](https://faiface.github.io/post/context-should-go-away-go2/) and I have a similar opinion.
 
-> If you use ctx.Value in my (non-existent) company, you’re fired
+> 만약 ctx.Value를 내 회사(존재하지는 않지만)에서 사용한다면, 해고당할 각오를 해야할 것입니다
 
-Some engineers have advocated passing values through `context` as it _feels convenient_.
+몇몇의 엔지니어들은 `context`를 통해 값들을 전해주는 것이 *편리하다는* 이유로 옹호합니다.
 
-Convenience is often the cause of bad code.
+편의성은 보통 좋지 않은 코드를 만들어냅니다.
 
-The problem with `context.Values` is that it's just an untyped map so you have no type-safety and you have to handle it not actually containing your value. You have to create a coupling of map keys from one module to another and if someone changes something things start breaking.
+`context.Values`의 문제점은 그것은 단순히 타입이 지정되지 않은 맵이기 때문에 타입 safety가 보장되지 않고 실제로는 가지고 있지 않은 값을 handle해줘야 할 수 있습니다. 한 모듈에서 다른 모듈로 보낼 경우 맵 키들의 대응 테이블(coupling)을 만들어야 하고, 코드에서 몇 부분이 수정될 경우 걷잡을 수 없게 되어버립니다.
 
-In short, **if a function needs some values, put them as typed parameters rather than trying to fetch them from `context.Value`**. This makes it statically checked and documented for everyone to see.
+요약하자면, **함수에 줄 값들이 필요하다면, `context.Value`를 사용하지 말고 타입이 지정된 인수로 넘겨줘야 합니다**. 이는 정적으로 해당 값들을 체크하는 것과 여러 사람이 쉽게 볼 수 있는 문서 작성에 있어서 반드시 필요한 부분입니다.
 
-#### But...
+#### 하지만...
 
 On other hand, it can be helpful to include information that is orthogonal to a request in a context, such as a trace id. Potentially this information would not be needed by every function in your call-stack and would make your functional signatures very messy.
 
