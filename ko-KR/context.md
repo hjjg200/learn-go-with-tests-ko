@@ -201,9 +201,9 @@ func Server(store Store) http.HandlerFunc {
 
 그러기 위해서 고루틴에서 `Fetch`를 호출한 뒤 새로운 채널인 `data`에 결과를 보내줍니다. 그리고 `select`문을 사용하여 두 비동기 프로세스를 경합(race)시킨 뒤 응답을 작성하거나 `Cancel`을 수행합니다.
 
-## Refactor
+## 리팩토링
 
-We can refactor our test code a bit by making assertion methods on our spy
+Spy에 assertion 메소드들을 추가하여 테스트 코드를 리팩토링 해봅시다.
 
 ```go
 type SpyStore struct {
@@ -227,7 +227,7 @@ func (s *SpyStore) assertWasNotCancelled() {
 }
 ```
 
-Remember to pass in the `*testing.T` when creating the spy.
+Spy를 생성할 때 `*testing.T`를 잊지 말도록 합시다.
 
 ```go
 func TestServer(t *testing.T) {
@@ -268,25 +268,25 @@ func TestServer(t *testing.T) {
 }
 ```
 
-This approach is ok, but is it idiomatic?
+위 접근 방식은 작동하기는 하지만 자연스럽지는 않습니다.
 
-Does it make sense for our web server to be concerned with manually cancelling `Store`? What if `Store` also happens to depend on other slow-running processes? We'll have to make sure that `Store.Cancel` correctly propagates the cancellation to all of its dependants.
+웹 서버에서 `Store`를 직접 취소하는데에 관여하는 것은 부자연스럽습니다. `Store`가 또 다른 slow-running 프로세스들에 의존하는 경우를 생각해 봐야 합니다. `Store.Cancel`이 올바르게 파생 context들에게 취소를 전파(propagate)하도록 해야합니다.
 
-One of the main points of `context` is that it is a consistent way of offering cancellation.
+`context`를 사용하는 주요 이유 중의 하나는 일관된 취소를 수행하기 위함입니다.
 
-[From the go doc](https://golang.org/pkg/context/)
+[공식 고 문서에 의하면](https://golang.org/pkg/context/)
 
-> Incoming requests to a server should create a Context, and outgoing calls to servers should accept a Context. The chain of function calls between them must propagate the Context, optionally replacing it with a derived Context created using WithCancel, WithDeadline, WithTimeout, or WithValue. When a Context is canceled, all Contexts derived from it are also canceled.
+> 들어오는 요청들은 context를 생성하는 것이 좋습니다. 그리고 나가는 call은 context를 인수로 받는 것이 좋습니다. 두 과정의 사이의 함수들을 호출할 때 해당 context를 반드시 전파하여야 하며, 원한다면 해당 context를 WithCancel, WithDeadline, WithTimeout, 혹은 WithValue를 이용해 파생시킨 context를 상ㅇ할 수도 있습니다. Context가 취소될 때 해당 context를 상속(derived from)한 모든 context들 또한 취소됩니다.
 
-From the [Go Blog: Context](https://blog.golang.org/context) again:
+다시 [Go Blog: Context](https://blog.golang.org/context)를 살펴보면:
 
-> At Google, we require that Go programmers pass a Context parameter as the first argument to every function on the call path between incoming and outgoing requests. This allows Go code developed by many different teams to interoperate well. It provides simple control over timeouts and cancelation and ensures that critical values like security credentials transit Go programs properly.
+> 구글에서는 고 프로그래머들로 하여금 모든 들어오는 요청과 나가는 요청 함수들의 모든 첫번째 인수를 context로 하도록 규정합니다. 이는 여러 팀에서 개발된 고 코드들이 서로 잘 작동하도록 합니다. Context는 간단한 방법을 통해 시간초과(timeout)와 취소를 관리할 수 있도록 하며, 보안 증명과 같은 중요한 값들이 고 프로그램에서 올바르게 이동되도록 합니다.
 
-(Pause for a moment and think of the ramifications of every function having to send in a context, and the ergonomics of that.)
+(잠시 시간을 내어 모든 함수가 context를 보낼 경우의 영향과 인간공학(ergonomics)적인 관점에서 생각해 봅시다.)
 
-Feeling a bit uneasy? Good. Let's try and follow that approach though and instead pass through the `context` to our `Store` and let it be responsible. That way it can also pass the `context` through to its dependants and they too can be responsible for stopping themselves.
+약간 불편하게 느껴진다면 좋습니다. though 해당 접근 방식을 따라하여 `context`를 `Store`에 넘겨 responsible하게 합니다. 이를 통해 해당 `context`를 그것에 의존하는 것들에 넘겨줄 수 있게 되고, 그 context들 또한 그것들을 멈추는 데에 responsible하게 됩니다.
 
-## Write the test first
+## 테스트를 먼저 작성해 봅시다
 
 We'll have to change our existing tests as their responsibilities are changing. The only thing our handler is responsible for now is making sure it sends a context through to the downstream `Store` and that it handles the error that will come from the `Store` when it is cancelled.
 
