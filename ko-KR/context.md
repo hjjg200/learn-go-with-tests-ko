@@ -71,7 +71,7 @@ type Store interface {
 }
 ```
 
-스파이를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 해봅시다. 또한 해당 객체가 어떻게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꿔줍니다. 그리고 `Store` 인터페이스와 상응하도록 `Cancel` 메서드를 추가해줍니다.
+스파이를 수정하여 `data`를 가져오는 데에 시간이 걸리도록 하고, 취소 여부를 알 수 있도록 해봅시다. 또한 해당 객체가 어떻게 호출되는지 지켜볼 것이므로 이름을 `SpyStore`로 바꿔줍니다. 그리고 `Store` 인터페이스를 구현하도록 `Cancel` 메서드를 추가해줍니다.
 
 ```go
 type SpyStore struct {
@@ -171,7 +171,7 @@ t.Run("returns data from store", func(t *testing.T) {
 })
 ```
 
-두 테스트를 실행해보면 행복한 경로 테스트는 이제 실패할 것입니다. 조금 더 실용적인 구현이 필요한 시점입니다.
+두 테스트를 실행해보면 행복한 경로 테스트는 이제 실패할 것입니다. 조금 더 합리적인 구현이 필요한 시점입니다.
 
 ```go
 func Server(store Store) http.HandlerFunc {
@@ -416,7 +416,7 @@ func (s *SpyResponseWriter) WriteHeader(statusCode int) {
 }
 ```
 
-위의 `SpyResponseWriter`는 `http.ResponseWriter` 인터페이스와 상응하기에 테스트에 사용할 수 있습니다.
+위의 `SpyResponseWriter`는 `http.ResponseWriter` 인터페이스를 구현하기에 테스트에 사용할 수 있습니다.
 
 ```go
 t.Run("tells store to cancel work if request is cancelled", func(t *testing.T) {
@@ -474,7 +474,7 @@ func Server(store Store) http.HandlerFunc {
 - 클라이언트가 요청을 취소할 때의 HTTP 핸들러를 테스트 하는 방법
 - 컨텍스트를 사용하여 취소를 관리하는 법
 - `context`를 인수로 받는 함수를 작성하고 고루틴, `select` 문, 채널을 이용하여 해당 컨텍스트를 취소하는 방법
-- 구글의 가이드라인에 나와있는 데로 요청에 대한 호출 스택에 파생(scoped) 컨텍스트를 전파하여 취소를 관리하는 법
+- 구글의 가이드라인에 나와있는 데로 요청에 대한 호출 스택에 유효한 컨텍스트를 전파하여 취소를 관리하는 법
 - `http.ResponseWriter`의 스파이를 작성하는 법
 
 ### context.Value는 무엇인가요?
@@ -485,21 +485,21 @@ func Server(store Store) http.HandlerFunc {
 
 몇몇 엔지니어들은 `context`를 통해 값들을 전해주는 것이 *편리하다는* 이유로 옹호하곤 합니다.
 
-하지만 편의성은 종종 좋지 않은 코드를 만들어냅니다.
+하지만 편의성은 종종 나쁜 코드를 만들어냅니다.
 
-`context.Values`는 단순히 타입이 지정되지 않은 맵이기 때문에 타입 안전성이 보장되지 않고 실제로는 가지고 있지 않은 값을 처리해줘야 하는 문제점을 가지고 있습니다. 한 모듈에서 다른 모듈로 보낼 경우 맵 키들의 대응 테이블(coupling)을 만들어줘야 하고, 누군가 코드를 수정하기 시작하면 문제가 발생하기 시작합니다.
+`context.Values`는 단순히 타입이 지정되지 않은 맵이기 때문에 타입 안전성이 보장되지 않고 실제로는 가지고 있지 않은 값을 처리해줘야 하는 문제점을 가지고 있습니다. 한 모듈에서 다른 모듈로 보낼 경우 맵 키들의 대응 목록을 만들어줘야 하고, 누군가 코드를 수정하기 시작하면 문제가 발생하기 시작합니다.
 
-다시 말해, **함수에 값을 넘겨주려면 `context.Value`를 사용하지 말고 타입이 지정된 인수로 넘겨줘야 합니다**. 이는 정적으로 해당 값들을 체크하는 것과 문서를 여러 사람이 쉽게 볼 수 있도록 작성하는데에 있어서 반드시 필요한 부분입니다.
+다시 말해, **함수에 값을 넘겨주려면 `context.Value`를 사용하지 말고 타입이 지정된 인수로 넘겨줘야 합니다**. 이는 정적으로 해당 부분이 검수되게 하고 모든 사람이 문서를 읽을 수 있도록 합니다.
 
 #### 하지만...
 
 트레이스 id와 같이 요청과 관련없는 정보를 이용할 때에는 도움이 될 수 있습니다. 호출 스택의 모든 함수에서 해당 정보를 필요로 할 가능성은 낮은 데다 이를 함수 인수로 포함할 경우 함수의 시그니쳐가 복잡해질 수 있기 때문입니다.
 
-[Jack Lindamood는 **Context.Value는 흐름을 제어하기 보다는 정보만 제공해야한다고 주장합니다**](https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39)
+[Jack Lindamood는 **Context.Value는 제어하기 보다는 정보만 제공해야한다고 주장합니다**](https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39)
 
-> context.Value는 사용자를 위한 것이 아니라 관리자를 위한 것입니다. 기대되거나 문서화된 결과 값에 필요한 입력값이 되어서는 절대 안됩니다.
+> context.Value의 내용은 사용자를 위한 것이 아니라 관리자를 위한 것입니다. 기대되거나 문서화된 결과 값에 필요한 입력값이 되어서는 절대 안됩니다.
 
 ### 추가 자료
 
-- 필자는 [Michal Štrba의 Go 2에서는 컨텍스트가 없어져야 합니다](https://faiface.github.io/post/context-should-go-away-go2/)를 흥미롭게 읽었습니다. 그가 주장하는 바는 `context`를 모든 곳에서 넘겨줘야하는 것은 탐탁하지 않고(a smell) 이는 곧 고 언어가 가진 취소를 관리하는 데에 있어서의 부족함을 드러낸다는 것입니다. 그는 또한 이러한 문제점이 라이브러리 레벨이 아닌 언어적인 레벨에서 수정되기를 바랍니다. 이러한 문제점이 해결되기 전까지는 오래 작동하는 프로세스를 관리하는 데에 있어 `context`는 반드시 필요한 존재입니다.
+- 필자는 [Michal Štrba의 Go 2에서는 컨텍스트가 없어져야 합니다](https://faiface.github.io/post/context-should-go-away-go2/)를 흥미롭게 읽었습니다. 그가 주장하는 바는 `context`를 모든 곳에서 넘겨줘야하는 것은 탐탁하지 않고 이는 곧 고 언어가 가진 취소를 관리하는 데에 있어서의 부족함을 드러낸다는 것입니다. 그는 또한 이러한 문제점이 라이브러리 레벨이 아닌 언어적인 레벨에서 수정되기를 바랍니다. 이러한 문제점이 해결되기 전까지는 오래 실행되는 프로세스를 관리하는 데에 있어 `context`는 필요한 존재입니다.
 - [고 블로그에서 `context`를 사용해야하는 이유와 몇몇 예제를 추가적으로 다루고 있습니다.](https://blog.golang.org/context)
