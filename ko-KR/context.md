@@ -15,11 +15,13 @@
 행복한 경로(happy path) 코드를 준비했습니다. 아래의 서버 코드를 확인해봅시다.
 
 ```go
+
 func Server(store Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, store.Fetch())
 	}
 }
+
 ```
 
 `Server` 함수는 `Store` 인수를 받은 뒤 `http.HandlerFunc`를 반환합니다. Store는 다음과 같이 정의되어 있습니다:
