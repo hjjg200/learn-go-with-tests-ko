@@ -48,7 +48,6 @@ func (s *StubStore) Fetch() string {
 	return s.response
 }
 
-
 func TestServer(t *testing.T) {
 	data := "hello, world"
 	svr := Server(&StubStore{data})
@@ -62,6 +61,7 @@ func TestServer(t *testing.T) {
 		t.Errorf(`got "%s", want "%s"`, response.Body.String(), data)
 	}
 }
+
 ```
 
 행복한 경로 코드가 준비되었으니 이제는 약간 더 현실성이 있는 경우를 가정해 볼 차례입니다. 사용자가 요청을 취소하기 전까지 `Store`가 `Fetch`를 끝내지 못하는 경우를 생각해봅시다.
