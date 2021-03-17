@@ -35,6 +35,7 @@ type Store interface {
 아래는 이 테스트에 쓰인 `Store`의 구현부분입니다.
 
 ```go
+
 type StubStore struct {
 	response string
 }
@@ -42,6 +43,7 @@ type StubStore struct {
 func (s *StubStore) Fetch() string {
 	return s.response
 }
+
 
 func TestServer(t *testing.T) {
 	data := "hello, world"
