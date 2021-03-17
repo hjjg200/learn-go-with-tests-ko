@@ -503,3 +503,4 @@ func Server(store Store) http.HandlerFunc {
 
 - 필자는 [Michal Štrba의 Go 2에서는 컨텍스트가 없어져야 합니다](https://faiface.github.io/post/context-should-go-away-go2/)를 흥미롭게 읽었습니다. 그가 주장하는 바는 `context`를 모든 곳에서 넘겨줘야하는 것은 탐탁하지 않고 이는 곧 고 언어가 가진 취소를 관리하는 데에 있어서의 부족함을 드러낸다는 것입니다. 그는 또한 이러한 문제점이 라이브러리 레벨이 아닌 언어적인 레벨에서 수정되기를 바랍니다. 이러한 문제점이 해결되기 전까지는 오래 실행되는 프로세스를 관리하는 데에 있어 `context`는 필요한 존재입니다.
 - [고 블로그에서 `context`를 사용해야하는 이유와 몇몇 예제를 추가적으로 다루고 있습니다.](https://blog.golang.org/context)
+
