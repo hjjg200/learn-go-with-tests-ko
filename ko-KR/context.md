@@ -27,9 +27,11 @@ func Server(store Store) http.HandlerFunc {
 `Server` 함수는 `Store` 인수를 받은 뒤 `http.HandlerFunc`를 반환합니다. Store는 다음과 같이 정의되어 있습니다:
 
 ```go
+
 type Store interface {
 	Fetch() string
 }
+
 ```
 
 반환된 함수는 `store`의 `Fetch` 메서드를 통해 데이터를 얻은 뒤 응답으로 해당 데이터를 출력합니다.
