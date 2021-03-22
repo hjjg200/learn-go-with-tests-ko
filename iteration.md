@@ -11,6 +11,7 @@ There's nothing new so far, so try and write it yourself for practice.
 ## Write the test first
 
 ```go
+// test
 package iteration
 
 import "testing"
